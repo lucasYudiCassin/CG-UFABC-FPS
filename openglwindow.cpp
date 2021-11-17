@@ -173,25 +173,34 @@ void OpenGLWindow::terminateGL() {
 }
 
 void OpenGLWindow::update() {
-  m_gunModel.m_modelMatrix =
-      glm::rotate(m_gunModel.m_modelMatrix, glm::radians(0.05f), m_axis);
+  // m_gunModel.m_modelMatrix =
+  //     glm::rotate(m_gunModel.m_modelMatrix, glm::radians(0.05f), m_axis);
   // m_modelMatrix = m_modelMatrix;
   // m_gunModel.m_modelMatrix =
   //     glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.5f));
+  glm::ivec2 mousePosition;
+  SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
 
-  m_viewMatrix =
-      glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f + m_zoom),
-                  glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+  const auto currentPosition{m_trackBall.project(mousePosition)};
+  m_viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f /*+ m_zoom*/),
+                             currentPosition, glm::vec3(0.0f, 1.0f, 0.0f));
+
+  // m_viewMatrix =
+  //     glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f + m_zoom),
+  //                 glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+  // m_gunModel.m_modelMatrix = m_viewMatrix;
 }
 
 void OpenGLWindow::setGunPostition() {
   m_axis = {0.0f, 1.0f, 0.0f};
   // Rotation angle
   const auto angle = glm::radians(100.0f);
+  glm::mat4 scalingMatrix =
+      glm::scale(glm::mat4(1.0f), glm::vec3(0.3f, 0.3f, 0.3f));
+  glm::mat4 translateMatrix =
+      glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, -0.12f, 1.4f));
+  glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
 
-  m_axis = glm::normalize(m_axis);
-  m_gunModel.m_modelMatrix =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.5f));
-  m_gunModel.m_modelMatrix =
-      glm::rotate(m_gunModel.m_modelMatrix, angle, m_axis);
+  m_gunModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
 }

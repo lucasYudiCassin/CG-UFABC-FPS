@@ -21,9 +21,9 @@ class Model {
   void setupVAO();
   void terminateGL();
 
-  [[nodiscard]] int getNumTriangles() const {
-    return static_cast<int>(m_indices.size()) / 3;
-  }
+  // [[nodiscard]] int getNumTriangles() const {
+  //   return static_cast<int>(m_indices.size()) / 3;
+  // }
   glm::mat4 m_modelMatrix{1.0f};
   GLuint m_program{};
 
