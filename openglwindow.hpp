@@ -20,15 +20,17 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   int m_viewportWidth{};
   int m_viewportHeight{};
 
-  Model m_model;
+  Model m_gunModel;
+  Model m_roomModel;
   int m_trianglesToDraw{};
+  glm::vec3 m_axis{1.0f};
 
   TrackBall m_trackBall;
   float m_zoom{};
 
-  glm::mat4 m_modelMatrix{1.0f};
   glm::mat4 m_viewMatrix{1.0f};
   glm::mat4 m_projMatrix{1.0f};
+  void setGunPostition();
 
   void update();
 };

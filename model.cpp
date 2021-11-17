@@ -39,8 +39,10 @@ void Model::createBuffers() {
   abcg::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Model::loadObj(std::string_view path, bool standardize) {
+void Model::loadObj(std::string_view path, GLuint m_programArg,
+                    bool standardize) {
   tinyobj::ObjReader reader;
+  m_program = m_programArg;
 
   if (!reader.ParseFromFile(path.data())) {
     if (!reader.Error().empty()) {
@@ -99,19 +101,20 @@ void Model::loadObj(std::string_view path, bool standardize) {
   createBuffers();
 }
 
-void Model::render(int numTriangles) const {
+void Model::render() const {
   abcg::glBindVertexArray(m_VAO);
 
-  const auto numIndices{(numTriangles < 0) ? m_indices.size()
-                                           : numTriangles * 3};
+  const GLint modelMatrixLoc{
+      abcg::glGetUniformLocation(m_program, "modelMatrix")};
+  abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &m_modelMatrix[0][0]);
 
-  abcg::glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(numIndices),
+  abcg::glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_indices.size()),
                        GL_UNSIGNED_INT, nullptr);
 
   abcg::glBindVertexArray(0);
 }
 
-void Model::setupVAO(GLuint program) {
+void Model::setupVAO() {
   // Release previous VAO
   abcg::glDeleteVertexArrays(1, &m_VAO);
 
@@ -125,12 +128,15 @@ void Model::setupVAO(GLuint program) {
 
   // Bind vertex attributes
   const GLint positionAttribute{
-      abcg::glGetAttribLocation(program, "inPosition")};
+      abcg::glGetAttribLocation(m_program, "inPosition")};
   if (positionAttribute >= 0) {
     abcg::glEnableVertexAttribArray(positionAttribute);
     abcg::glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE,
                                 sizeof(Vertex), nullptr);
   }
+
+  // const GLint modelMatrixAttribute{
+  //     abcg::glGetAttribLocation(program, "modelMatrix")};
 
   // End of binding
   abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -154,7 +160,7 @@ void Model::standardize() {
 
   // Center and scale
   const auto center{(min + max) / 2.0f};
-  const auto scaling{2.0f / glm::length(max - min)};
+  const auto scaling{m_scale / glm::length(max - min)};
   for (auto& vertex : m_vertices) {
     vertex.position = (vertex.position - center) * scaling;
   }

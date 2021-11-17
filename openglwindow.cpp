@@ -21,7 +21,7 @@ void OpenGLWindow::handleEvent(SDL_Event& event) {
   }
   if (event.type == SDL_MOUSEWHEEL) {
     m_zoom += (event.wheel.y > 0 ? 1.0f : -1.0f) / 5.0f;
-    m_zoom = glm::clamp(m_zoom, -1.5f, 1.0f);
+    m_zoom = glm::clamp(m_zoom, -1.5f, 2.0f);
   }
 }
 
@@ -36,11 +36,17 @@ void OpenGLWindow::initializeGL() {
                                     getAssetsPath() + "depth.frag");
 
   // Load model
-  m_model.loadObj(getAssetsPath() + "bunny.obj");
+  m_gunModel.loadObj(getAssetsPath() + "GUN_OBJ.obj", m_program, true);
+  m_gunModel.setupVAO();
 
-  m_model.setupVAO(m_program);
+  m_roomModel.loadObj(getAssetsPath() + "EmptyRoom.obj", m_program, true);
+  m_roomModel.setupVAO();
+  setGunPostition();
+  // m_trianglesToDraw = m_gunModel.getNumTriangles();
 
-  m_trianglesToDraw = m_model.getNumTriangles();
+  // glm::ivec2 mousePosition;
+  // SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
+  // m_trackBall.mousePress(mousePosition);
 }
 
 void OpenGLWindow::paintGL() {
@@ -58,8 +64,8 @@ void OpenGLWindow::paintGL() {
       abcg::glGetUniformLocation(m_program, "viewMatrix")};
   const GLint projMatrixLoc{
       abcg::glGetUniformLocation(m_program, "projMatrix")};
-  const GLint modelMatrixLoc{
-      abcg::glGetUniformLocation(m_program, "modelMatrix")};
+  // const GLint modelMatrixLoc{
+  //     abcg::glGetUniformLocation(m_program, "modelMatrix")};
   const GLint colorLoc{abcg::glGetUniformLocation(m_program, "color")};
 
   // Set uniform variables used by every scene object
@@ -67,36 +73,18 @@ void OpenGLWindow::paintGL() {
   abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, &m_projMatrix[0][0]);
 
   // Set uniform variables of the current object
-  abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &m_modelMatrix[0][0]);
+  // abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE,
+  //                          &m_gunModel.m_modelMatrix[0][0]);
   abcg::glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);  // White
 
-  m_model.render(m_trianglesToDraw);
+  m_gunModel.render();
+  m_roomModel.render();
 
   abcg::glUseProgram(0);
 }
 
 void OpenGLWindow::paintUI() {
   abcg::OpenGLWindow::paintUI();
-
-  // Create window for slider
-  {
-    ImGui::SetNextWindowPos(ImVec2(5, m_viewportHeight - 94));
-    ImGui::SetNextWindowSize(ImVec2(m_viewportWidth - 10, -1));
-    ImGui::Begin("Slider window", nullptr, ImGuiWindowFlags_NoDecoration);
-
-    // Create a slider to control the number of rendered triangles
-    {
-      // Slider will fill the space of the window
-      ImGui::PushItemWidth(m_viewportWidth - 25);
-
-      ImGui::SliderInt("", &m_trianglesToDraw, 0, m_model.getNumTriangles(),
-                       "%d triangles");
-
-      ImGui::PopItemWidth();
-    }
-
-    ImGui::End();
-  }
 
   // Create a window for the other widgets
   {
@@ -179,14 +167,31 @@ void OpenGLWindow::resizeGL(int width, int height) {
 }
 
 void OpenGLWindow::terminateGL() {
-  m_model.terminateGL();
+  m_gunModel.terminateGL();
+  m_roomModel.terminateGL();
   abcg::glDeleteProgram(m_program);
 }
 
 void OpenGLWindow::update() {
-  m_modelMatrix = m_trackBall.getRotation();
+  m_gunModel.m_modelMatrix =
+      glm::rotate(m_gunModel.m_modelMatrix, glm::radians(0.05f), m_axis);
+  // m_modelMatrix = m_modelMatrix;
+  // m_gunModel.m_modelMatrix =
+  //     glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.5f));
 
   m_viewMatrix =
       glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f + m_zoom),
                   glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+void OpenGLWindow::setGunPostition() {
+  m_axis = {0.0f, 1.0f, 0.0f};
+  // Rotation angle
+  const auto angle = glm::radians(100.0f);
+
+  m_axis = glm::normalize(m_axis);
+  m_gunModel.m_modelMatrix =
+      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.5f));
+  m_gunModel.m_modelMatrix =
+      glm::rotate(m_gunModel.m_modelMatrix, angle, m_axis);
 }

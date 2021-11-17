@@ -56,14 +56,15 @@ void TrackBall::resizeViewport(int width, int height) {
 }
 
 glm::mat4 TrackBall::getRotation() {
-  if (m_mouseTracking) return m_rotation;
+  return m_rotation;
+  // if (m_mouseTracking) return m_rotation;
 
-  // If not tracking, rotate by velocity. This will simulate
-  // an inertia-free rotation.
-  const auto angle{m_velocity * static_cast<float>(m_lastTime.elapsed()) *
-                   1000.0f};
+  // // If not tracking, rotate by velocity. This will simulate
+  // // an inertia-free rotation.
+  // const auto angle{m_velocity * static_cast<float>(m_lastTime.elapsed()) *
+  //                  1000.0f};
 
-  return glm::rotate(glm::mat4(1.0f), angle, m_axis) * m_rotation;
+  // return glm::rotate(glm::mat4(1.0f), angle, m_axis) * m_rotation;
 }
 
 glm::vec3 TrackBall::project(const glm::vec2 &position) const {

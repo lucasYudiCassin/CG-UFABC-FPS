@@ -15,14 +15,17 @@ struct Vertex {
 
 class Model {
  public:
-  void loadObj(std::string_view path, bool standardize = true);
-  void render(int numTriangles = -1) const;
-  void setupVAO(GLuint program);
+  void loadObj(std::string_view path, GLuint m_program,
+               bool standardize = true);
+  void render() const;
+  void setupVAO();
   void terminateGL();
 
   [[nodiscard]] int getNumTriangles() const {
     return static_cast<int>(m_indices.size()) / 3;
   }
+  glm::mat4 m_modelMatrix{1.0f};
+  GLuint m_program{};
 
  private:
   GLuint m_VAO{};
@@ -32,6 +35,7 @@ class Model {
   std::vector<Vertex> m_vertices;
   std::vector<GLuint> m_indices;
 
+  float m_scale{1.0f};
   void createBuffers();
   void standardize();
 };
