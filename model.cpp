@@ -99,6 +99,7 @@ void Model::loadObj(std::string_view path, GLuint m_programArg,
   }
 
   createBuffers();
+  // m_color = {1.0f, 1.0f, 1.0f, 1.0f};
 }
 
 void Model::render() const {
@@ -108,6 +109,9 @@ void Model::render() const {
       abcg::glGetUniformLocation(m_program, "modelMatrix")};
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &m_modelMatrix[0][0]);
 
+  const GLint colorLoc{abcg::glGetUniformLocation(m_program, "color")};
+  // abcg::glUniform4f(colorLoc, m_color);
+  abcg::glUniform4fv(colorLoc, 1, &m_color.r);
   abcg::glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_indices.size()),
                        GL_UNSIGNED_INT, nullptr);
 

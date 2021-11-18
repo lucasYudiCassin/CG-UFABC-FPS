@@ -66,7 +66,7 @@ void OpenGLWindow::paintGL() {
       abcg::glGetUniformLocation(m_program, "projMatrix")};
   // const GLint modelMatrixLoc{
   //     abcg::glGetUniformLocation(m_program, "modelMatrix")};
-  const GLint colorLoc{abcg::glGetUniformLocation(m_program, "color")};
+  // const GLint colorLoc{abcg::glGetUniformLocation(m_program, "color")};
 
   // Set uniform variables used by every scene object
   abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, &m_viewMatrix[0][0]);
@@ -75,7 +75,7 @@ void OpenGLWindow::paintGL() {
   // Set uniform variables of the current object
   // abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE,
   //                          &m_gunModel.m_modelMatrix[0][0]);
-  abcg::glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);  // White
+  // abcg::glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);  // White
 
   m_gunModel.render();
   m_roomModel.render();
@@ -203,4 +203,5 @@ void OpenGLWindow::setGunPostition() {
   glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
 
   m_gunModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
+  m_roomModel.m_color = {0.5, 0.5, 0.5, 1.0f};
 }

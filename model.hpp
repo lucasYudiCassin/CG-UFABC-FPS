@@ -25,7 +25,9 @@ class Model {
   //   return static_cast<int>(m_indices.size()) / 3;
   // }
   glm::mat4 m_modelMatrix{1.0f};
+
   GLuint m_program{};
+  glm::vec4 m_color{1.0f};
 
  private:
   GLuint m_VAO{};
