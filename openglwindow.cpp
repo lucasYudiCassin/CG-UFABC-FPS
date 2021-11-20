@@ -78,8 +78,8 @@ void OpenGLWindow::paintGL() {
   //                          &m_gunModel.m_modelMatrix[0][0]);
   // abcg::glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);  // White
 
-  m_gunModel.render();
   m_roomModel.render();
+  m_gunModel.render();
 
   abcg::glUseProgram(0);
 }
@@ -212,11 +212,11 @@ void OpenGLWindow::setRoomPostition() {
   // Rotation angle
   const auto angle = glm::radians(-90.0f);
   glm::mat4 scalingMatrix =
-      glm::scale(glm::mat4(1.0f), glm::vec3(1.5f, 2.0f, 3.0f));
+      glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 3.0f));
   glm::mat4 translateMatrix =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.2f, 0.8f));
+      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.3f, 1.4f));
   glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
 
   m_roomModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
-  m_roomModel.m_color = {0.8f, 0.8f, 0.8f, 1.0f};
+  m_roomModel.m_color = {0.7f, 0.7f, 0.7f, 1.0f};
 }
