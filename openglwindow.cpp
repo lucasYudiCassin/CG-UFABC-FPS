@@ -39,7 +39,7 @@ void OpenGLWindow::initializeGL() {
   m_gunModel.loadObj(getAssetsPath() + "GUN_OBJ.obj", m_program, true);
   m_gunModel.setupVAO();
 
-  m_roomModel.loadObj(getAssetsPath() + "ROOM_V3.obj", m_program, true);
+  m_roomModel.loadObj(getAssetsPath() + "ROOM_V4.obj", m_program, true);
   m_roomModel.setupVAO();
   setGunPostition();
   setRoomPostition();
@@ -199,9 +199,9 @@ void OpenGLWindow::setGunPostition() {
   // Rotation angle
   const auto angle = glm::radians(100.0f);
   glm::mat4 scalingMatrix =
-      glm::scale(glm::mat4(1.0f), glm::vec3(0.3f, 0.3f, 0.3f));
+      glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
   glm::mat4 translateMatrix =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, -0.12f, 1.4f));
+      glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, -0.12f, 1.7f));
   glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
 
   m_gunModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
@@ -214,7 +214,7 @@ void OpenGLWindow::setRoomPostition() {
   glm::mat4 scalingMatrix =
       glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 3.0f));
   glm::mat4 translateMatrix =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.3f, 1.4f));
+      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.2f, 1.5f));
   glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
 
   m_roomModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
