@@ -31,6 +31,7 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   glm::mat4 m_viewMatrix{1.0f};
   glm::mat4 m_projMatrix{1.0f};
   void setGunPostition();
+  void setRoomPostition();
 
   void update();
 };
