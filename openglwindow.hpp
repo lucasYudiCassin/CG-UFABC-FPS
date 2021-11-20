@@ -22,6 +22,8 @@ class OpenGLWindow : public abcg::OpenGLWindow {
 
   Model m_gunModel;
   Model m_roomModel;
+  Model m_targetModel;
+
   int m_trianglesToDraw{};
   glm::vec3 m_axis{1.0f};
 
@@ -32,6 +34,7 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   glm::mat4 m_projMatrix{1.0f};
   void setGunPostition();
   void setRoomPostition();
+  void setTargetPostition();
 
   void update();
 };

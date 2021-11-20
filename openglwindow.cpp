@@ -41,8 +41,13 @@ void OpenGLWindow::initializeGL() {
 
   m_roomModel.loadObj(getAssetsPath() + "ROOM_V4.obj", m_program, true);
   m_roomModel.setupVAO();
+
+  m_targetModel.loadObj(getAssetsPath() + "target.obj", m_program, true);
+  m_targetModel.setupVAO();
+
   setGunPostition();
   setRoomPostition();
+  setTargetPostition();
   // m_trianglesToDraw = m_gunModel.getNumTriangles();
 
   // glm::ivec2 mousePosition;
@@ -80,6 +85,7 @@ void OpenGLWindow::paintGL() {
 
   m_roomModel.render();
   m_gunModel.render();
+  m_targetModel.render();
 
   abcg::glUseProgram(0);
 }
@@ -170,6 +176,7 @@ void OpenGLWindow::resizeGL(int width, int height) {
 void OpenGLWindow::terminateGL() {
   m_gunModel.terminateGL();
   m_roomModel.terminateGL();
+  m_targetModel.terminateGL();
   abcg::glDeleteProgram(m_program);
 }
 
@@ -184,7 +191,7 @@ void OpenGLWindow::update() {
   SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
 
   const auto currentPosition{m_trackBall.project(mousePosition)};
-  m_viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f /*+ m_zoom*/),
+  m_viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f + m_zoom),
                              currentPosition, glm::vec3(0.0f, 1.0f, 0.0f));
 
   // m_viewMatrix =
@@ -219,4 +226,18 @@ void OpenGLWindow::setRoomPostition() {
 
   m_roomModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
   m_roomModel.m_color = {0.7f, 0.7f, 0.7f, 1.0f};
+}
+
+void OpenGLWindow::setTargetPostition() {
+  m_axis = {0.0f, 1.0f, 0.0f};
+  // Rotation angle
+  const auto angle = glm::radians(-90.0f);
+  glm::mat4 scalingMatrix =
+      glm::scale(glm::mat4(1.0f), glm::vec3(0.13f, 0.13f, 0.13f));
+  glm::mat4 translateMatrix =
+      glm::translate(glm::mat4(1.0f), glm::vec3(0.3f, 0.2f, 0.9f));
+  glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
+
+  m_targetModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
+  m_targetModel.m_color = {0.0f, 0.0f, 0.7f, 1.0f};
 }
