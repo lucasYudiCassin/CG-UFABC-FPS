@@ -30,14 +30,9 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   bool m_screenFocus{false};
   abcg::ElapsedTimer m_mouseTimer{};
 
-  TrackBall m_trackBall;
-  float m_zoom{};
-
-  glm::mat4 m_viewMatrix{1.0f};
-  glm::mat4 m_projMatrix{1.0f};
-  void setGunPostition();
-  void setRoomPostition();
-  void setTargetPostition();
+  void renderGun();
+  void renderRoom();
+  void renderTarget();
 
   void update();
   glm::vec2 getRotationSpeedFromMouse();
