@@ -4,7 +4,7 @@ Esse é um modelo de um jogo, criado para a disciplina de computação gráfica 
 
 Baseado no [AIMLAB](https://aimlab.gg/) 
 
-**[Clique aqui para visualizar!]()**
+**[Clique aqui para visualizar!](https://lucasyudicassin.github.io/fpsAimTrainerV1/index.html)**
 
 Desenvolvido pelos alunos:
  - Fernando Kenji - RA: 11201722146
