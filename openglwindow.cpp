@@ -8,20 +8,43 @@ void OpenGLWindow::handleEvent(SDL_Event& event) {
   glm::ivec2 mousePosition;
   SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
 
-  if (event.type == SDL_MOUSEMOTION) {
-    m_trackBall.mouseMove(mousePosition);
+  if (event.type == SDL_KEYDOWN) {
+    if (event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_w)
+      m_dollySpeed = 1.0f;
+
+    if (event.key.keysym.sym == SDLK_DOWN || event.key.keysym.sym == SDLK_s)
+      m_dollySpeed = -1.0f;
+
+    if (event.key.keysym.sym == SDLK_LEFT || event.key.keysym.sym == SDLK_a)
+      m_truckSpeed = -1.0f;
+
+    if (event.key.keysym.sym == SDLK_RIGHT || event.key.keysym.sym == SDLK_d)
+      m_truckSpeed = 1.0f;
+
+    if (event.key.keysym.sym == SDLK_ESCAPE) m_screenFocus = false;
   }
-  if (event.type == SDL_MOUSEBUTTONDOWN &&
-      event.button.button == SDL_BUTTON_LEFT) {
-    m_trackBall.mousePress(mousePosition);
+
+  if (event.type == SDL_KEYUP) {
+    if ((event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_w) &&
+        m_dollySpeed > 0)
+      m_dollySpeed = 0.0f;
+
+    if ((event.key.keysym.sym == SDLK_DOWN || event.key.keysym.sym == SDLK_s) &&
+        m_dollySpeed < 0)
+      m_dollySpeed = 0.0f;
+
+    if ((event.key.keysym.sym == SDLK_LEFT || event.key.keysym.sym == SDLK_a) &&
+        m_truckSpeed < 0)
+      m_truckSpeed = 0.0f;
+
+    if ((event.key.keysym.sym == SDLK_RIGHT ||
+         event.key.keysym.sym == SDLK_d) &&
+        m_truckSpeed > 0)
+      m_truckSpeed = 0.0f;
   }
-  if (event.type == SDL_MOUSEBUTTONUP &&
-      event.button.button == SDL_BUTTON_LEFT) {
-    m_trackBall.mouseRelease(mousePosition);
-  }
-  if (event.type == SDL_MOUSEWHEEL) {
-    m_zoom += (event.wheel.y > 0 ? 1.0f : -1.0f) / 5.0f;
-    m_zoom = glm::clamp(m_zoom, -1.5f, 2.0f);
+
+  if (event.type == SDL_MOUSEBUTTONDOWN) {
+    m_screenFocus = true;
   }
 }
 
@@ -201,43 +224,25 @@ void OpenGLWindow::update() {
   // m_gunModel.m_modelMatrix = m_viewMatrix;
 }
 
-void OpenGLWindow::setGunPostition() {
-  m_axis = {0.0f, 1.0f, 0.0f};
-  // Rotation angle
-  const auto angle = glm::radians(100.0f);
-  glm::mat4 scalingMatrix =
-      glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
-  glm::mat4 translateMatrix =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, -0.12f, 1.7f));
-  glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
+glm::vec2 OpenGLWindow::getRotationSpeedFromMouse() {
+  if (!m_screenFocus) return glm::vec2{0, 0};
 
-  m_gunModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
+  if (m_mouseTimer.elapsed() > 0.10) {
+    SDL_WarpMouseInWindow(nullptr, m_viewportWidth / 2, m_viewportHeight / 2);
+    m_mouseTimer.restart();
 }
 
-void OpenGLWindow::setRoomPostition() {
-  m_axis = {0.0f, 1.0f, 0.0f};
-  // Rotation angle
-  const auto angle = glm::radians(-90.0f);
-  glm::mat4 scalingMatrix =
-      glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 3.0f));
-  glm::mat4 translateMatrix =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.2f, 1.5f));
-  glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
+  glm::ivec2 mousePosition;
+  SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
 
-  m_roomModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
-  m_roomModel.m_color = {0.7f, 0.7f, 0.7f, 1.0f};
-}
+  float maxMovement{0.9f};
+  float speedScale{50.0f};
+  glm::vec2 movement{2.0f * mousePosition.x / m_viewportWidth - 1.0f,
+                     1.0f - 2.0f * mousePosition.y / m_viewportHeight};
 
-void OpenGLWindow::setTargetPostition() {
-  m_axis = {0.0f, 1.0f, 0.0f};
-  // Rotation angle
-  const auto angle = glm::radians(-90.0f);
-  glm::mat4 scalingMatrix =
-      glm::scale(glm::mat4(1.0f), glm::vec3(0.13f, 0.13f, 0.13f));
-  glm::mat4 translateMatrix =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.3f, 0.2f, 0.9f));
-  glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
+  // Avoid infinite tilt/pan movement when cursor gets out of the window
+  if (std::abs(movement.x) > maxMovement || std::abs(movement.y) > maxMovement)
+    return glm::vec2{0, 0};
 
-  m_targetModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
-  m_targetModel.m_color = {0.0f, 0.0f, 0.7f, 1.0f};
+  return glm::vec2{movement.x * speedScale, movement.y * speedScale};
 }

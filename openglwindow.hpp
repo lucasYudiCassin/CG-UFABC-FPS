@@ -2,8 +2,8 @@
 #define OPENGLWINDOW_HPP_
 
 #include "abcg.hpp"
+#include "camera.hpp"
 #include "model.hpp"
-#include "trackball.hpp"
 
 class OpenGLWindow : public abcg::OpenGLWindow {
  protected:
@@ -24,8 +24,11 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   Model m_roomModel;
   Model m_targetModel;
 
-  int m_trianglesToDraw{};
-  glm::vec3 m_axis{1.0f};
+  Camera m_camera;
+  float m_dollySpeed{0.0f};
+  float m_truckSpeed{0.0f};
+  bool m_screenFocus{false};
+  abcg::ElapsedTimer m_mouseTimer{};
 
   TrackBall m_trackBall;
   float m_zoom{};
@@ -37,6 +40,7 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   void setTargetPostition();
 
   void update();
+  glm::vec2 getRotationSpeedFromMouse();
 };
 
 #endif
