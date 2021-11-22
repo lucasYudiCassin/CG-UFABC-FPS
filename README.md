@@ -24,8 +24,13 @@ O quarto e os alvos foram desenvolvidos utilizando o [blender](https://www.blend
 
 A disposição já está no formato que será utilizada no jogo
 
+A movimentação foi adicionada apenas para poder visualizar os objetos 3d, essa não será a movimentação final do projeto 3. O mesmo para as colisões
+
+Utilize as teclas `a`, `w`, `s` e `d` para se mover
+
 
 # Técnicas
 Utilizamos matrizes de transformações para cada objeto, mudando a escala, a rotação e a posição. Essas mudanças são colocadas na matriz de modelo, onde cada modelo possui sua própria matriz.
 
-A movimentação foi adicionada apenas para poder visualizar os objetos 3d, essa não será a movimentação final do projeto 3. O mesmo para as colisões
+Funções para renderizar cada modelo
+
