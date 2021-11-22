@@ -32,4 +32,5 @@ Utilize as teclas `a`, `w`, `s` e `d` para se mover
 # Técnicas
 Utilizamos matrizes de transformações para cada objeto, mudando a escala, a rotação e a posição. Essas mudanças são colocadas na matriz de modelo, onde cada modelo possui sua própria matriz.
 
+Funções para renderizar cada modelo
 
