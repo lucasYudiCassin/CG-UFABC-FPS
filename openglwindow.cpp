@@ -21,7 +21,10 @@ void OpenGLWindow::handleEvent(SDL_Event& event) {
     if (event.key.keysym.sym == SDLK_RIGHT || event.key.keysym.sym == SDLK_d)
       m_truckSpeed = 1.0f;
 
-    if (event.key.keysym.sym == SDLK_ESCAPE) m_screenFocus = false;
+    if (event.key.keysym.sym == SDLK_ESCAPE) {
+      SDL_SetRelativeMouseMode(SDL_FALSE);
+      m_relativeMouse = false;
+    }
   }
 
   if (event.type == SDL_KEYUP) {
@@ -44,7 +47,15 @@ void OpenGLWindow::handleEvent(SDL_Event& event) {
   }
 
   if (event.type == SDL_MOUSEBUTTONDOWN) {
-    m_screenFocus = true;
+    SDL_SetRelativeMouseMode(SDL_TRUE);
+    m_relativeMouse = true;
+  }
+
+  if (event.type == SDL_MOUSEMOTION) {
+    m_mouseMovement = glm::vec2{
+        m_mouseMovement.x + event.motion.xrel,
+        m_mouseMovement.y + event.motion.yrel,
+    };
   }
 }
 
@@ -103,11 +114,12 @@ void OpenGLWindow::terminateGL() {
 void OpenGLWindow::update() {
   float deltaTime{static_cast<float>(getDeltaTime())};
 
-  glm::vec2 rotationSpeed = getRotationSpeedFromMouse();
-
   // const auto currentPosition{m_trackBall.project(mousePosition)};
   m_camera.dolly(m_dollySpeed * deltaTime);
   m_camera.truck(m_truckSpeed * deltaTime);
+
+  if (m_mouseMovement.x == 0 && m_mouseMovement.y == 0) return;
+  glm::vec2 rotationSpeed = getMouseRotationSpeed();
   m_camera.pan(rotationSpeed.x * deltaTime);
   m_camera.tilt(rotationSpeed.y * deltaTime);
 }
@@ -212,18 +224,9 @@ void OpenGLWindow::renderTarget() {
                            &m_camera.m_projMatrix[0][0]);
 
   glm::mat4 modelMatrix{1.0f};
-
-  // m_axis = {0.0f, 1.0f, 0.0f};
   // Rotation angle
-  // const auto angle = glm::radians(100.0f);
   modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
   modelMatrix = glm::scale(modelMatrix, glm::vec3(0.13f, 0.13f, 0.13f));
-  // modelMatrix = glm::rotate(modelMatrix, angle, m_axis);
-
-  //   glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
-
-  //   m_targetModel.m_modelMatrix = translateMatrix * rotateMatrix *
-  //   scalingMatrix; m_targetModel.m_color = {0.0f, 0.0f, 0.7f, 1.0f};
 
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &modelMatrix[0][0]);
   abcg::glUniform4f(colorLoc, 0.0f, 0.0f, 0.7f, 1.0f);
@@ -232,25 +235,16 @@ void OpenGLWindow::renderTarget() {
   glUseProgram(0);
 }
 
-glm::vec2 OpenGLWindow::getRotationSpeedFromMouse() {
-  if (!m_screenFocus) return glm::vec2{0, 0};
-
-  if (m_mouseTimer.elapsed() > 0.10) {
+glm::vec2 OpenGLWindow::getMouseRotationSpeed() {
+  if (m_relativeMouse) {
     SDL_WarpMouseInWindow(nullptr, m_viewportWidth / 2, m_viewportHeight / 2);
-    m_mouseTimer.restart();
   }
 
-  glm::ivec2 mousePosition;
-  SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
+  float speedScale{5.0f};
 
-  float maxMovement{0.9f};
-  float speedScale{50.0f};
-  glm::vec2 movement{2.0f * mousePosition.x / m_viewportWidth - 1.0f,
-                     1.0f - 2.0f * mousePosition.y / m_viewportHeight};
+  glm::vec2 mouseMovement{m_mouseMovement.x, -m_mouseMovement.y};
 
-  // Avoid infinite tilt/pan movement when cursor gets out of the window
-  if (std::abs(movement.x) > maxMovement || std::abs(movement.y) > maxMovement)
-    return glm::vec2{0, 0};
+  m_mouseMovement = glm::vec2{0, 0};
 
-  return glm::vec2{movement.x * speedScale, movement.y * speedScale};
+  return glm::vec2{mouseMovement.x * speedScale, mouseMovement.y * speedScale};
 }

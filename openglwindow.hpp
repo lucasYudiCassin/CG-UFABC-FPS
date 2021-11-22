@@ -27,7 +27,8 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   Camera m_camera;
   float m_dollySpeed{0.0f};
   float m_truckSpeed{0.0f};
-  bool m_screenFocus{false};
+  glm::vec2 m_mouseMovement{0.0f};
+  bool m_relativeMouse{true};
   abcg::ElapsedTimer m_mouseTimer{};
 
   void renderGun();
@@ -35,7 +36,7 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   void renderTarget();
 
   void update();
-  glm::vec2 getRotationSpeedFromMouse();
+  glm::vec2 getMouseRotationSpeed();
 };
 
 #endif
