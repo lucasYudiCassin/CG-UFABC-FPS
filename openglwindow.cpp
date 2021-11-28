@@ -67,28 +67,25 @@ void OpenGLWindow::initializeGL() {
   abcg::glEnable(GL_DEPTH_TEST);
 
   // Create program
-  m_program = createProgramFromFile(getAssetsPath() + "blinnphong.vert",
-                                    getAssetsPath() + "blinnphong.frag");
-
-  // // Create programs
-  // for (const auto& name : m_shaderNames) {
-  //   const auto program{createProgramFromFile(getAssetsPath() + name +
-  //   ".vert",
-  //                                            getAssetsPath() + name +
-  //                                            ".frag")};
-  //   m_programs.push_back(program);
-  // }
+  m_program = createProgramFromFile(getAssetsPath() + "shaders/texture.vert",
+                                    getAssetsPath() + "shaders/texture.frag");
 
   // Load model
-  m_gunModel.loadObj(getAssetsPath() + "GUN_OBJ.obj", true);
-  m_gunModel.setupVAO(m_program);
+  m_gunModel.loadModel(getAssetsPath() + "viking_room.obj",
+                       getAssetsPath() + "map/viking_room.png", m_program);
+  // m_roomModel.loadModel(getAssetsPath() + "ROOM_V4.obj",
+  //                       getAssetsPath() + "map/Gun.png", m_program);
+  // m_targetModel.loadModel(getAssetsPath() + "target.obj",
+  //                         getAssetsPath() + "map/Gun.png", m_program);
+  // m_gunModel.loadObj(getAssetsPath() + "GUN_OBJ_V2.obj", true);
+  // m_gunModel.setupVAO(m_program);
 
-  m_roomModel.loadObj(getAssetsPath() + "ROOM_V4.obj", true);
-  m_roomModel.setupVAO(m_program);
+  // m_roomModel.loadObj(getAssetsPath() + "ROOM_V4.obj", true);
+  // m_roomModel.setupVAO(m_program);
 
-  m_targetModel.loadObj(getAssetsPath() + "target.obj", true);
-  m_targetModel.setupVAO(m_program);
-
+  // m_targetModel.loadObj(getAssetsPath() + "target.obj", true);
+  // m_targetModel.setupVAO(m_program);
+  m_mappingMode = 3;
   m_camera.initializeCamera();
 }
 
@@ -100,8 +97,8 @@ void OpenGLWindow::paintGL() {
 
   abcg::glViewport(0, 0, m_viewportWidth, m_viewportHeight);
 
-  renderRoom();
-  renderTarget();
+  // renderRoom();
+  // renderTarget();
   renderGun();
 }
 
@@ -116,8 +113,8 @@ void OpenGLWindow::resizeGL(int width, int height) {
 
 void OpenGLWindow::terminateGL() {
   m_gunModel.terminateGL();
-  m_roomModel.terminateGL();
-  m_targetModel.terminateGL();
+  // m_roomModel.terminateGL();
+  // m_targetModel.terminateGL();
   abcg::glDeleteProgram(m_program);
 }
 
@@ -152,9 +149,7 @@ void OpenGLWindow::renderGun() {
 
   // m_gunModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
 
-  render(m_program, modelMatrix, {1.0f, 1.0f, 1.0f, 1.0f});
-  m_gunModel.render();
-  glUseProgram(0);
+  render(m_program, modelMatrix, {1.0f, 1.0f, 1.0f, 1.0f}, m_gunModel);
 }
 
 void OpenGLWindow::renderRoom() {
@@ -165,9 +160,9 @@ void OpenGLWindow::renderRoom() {
   modelMatrix = glm::scale(modelMatrix, glm::vec3(3.0f, 2.0f, 2.0f));
   modelMatrix = glm::rotate(modelMatrix, -angle, m_camera.m_up);
 
-  render(m_program, modelMatrix, {0.8f, 0.8f, 0.8f, 1.0f});
-  m_roomModel.render();
-  glUseProgram(0);
+  render(m_program, modelMatrix, {0.8f, 0.8f, 0.8f, 1.0f}, m_roomModel);
+  // m_roomModel.render();
+  // glUseProgram(0);
 }
 
 void OpenGLWindow::renderTarget() {
@@ -176,13 +171,13 @@ void OpenGLWindow::renderTarget() {
   modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
   modelMatrix = glm::scale(modelMatrix, glm::vec3(0.13f, 0.13f, 0.13f));
 
-  render(m_program, modelMatrix, {0.0f, 0.0f, 0.7f, 1.0f});
-  m_targetModel.render();
-  glUseProgram(0);
+  render(m_program, modelMatrix, {0.0f, 0.0f, 0.7f, 1.0f}, m_targetModel);
+  // m_targetModel.render();
+  // glUseProgram(0);
 }
 
 void OpenGLWindow::render(GLuint m_program, glm::mat4 modelMatrix,
-                          glm::vec4 color) {
+                          glm::vec4 color, Model obj) {
   glUseProgram(m_program);
   // Get location of uniform variables (could be precomputed)
   const GLint viewMatrixLoc{
@@ -195,7 +190,7 @@ void OpenGLWindow::render(GLuint m_program, glm::mat4 modelMatrix,
   const GLint normalMatrixLoc{
       abcg::glGetUniformLocation(m_program, "normalMatrix")};
 
-  const GLint colorLoc{abcg::glGetUniformLocation(m_program, "color")};
+  // const GLint colorLoc{abcg::glGetUniformLocation(m_program, "color")};
 
   const GLint lightDirLoc{
       abcg::glGetUniformLocation(m_program, "lightDirWorldSpace")};
@@ -206,12 +201,19 @@ void OpenGLWindow::render(GLuint m_program, glm::mat4 modelMatrix,
   const GLint KaLoc{abcg::glGetUniformLocation(m_program, "Ka")};
   const GLint KdLoc{abcg::glGetUniformLocation(m_program, "Kd")};
   const GLint KsLoc{abcg::glGetUniformLocation(m_program, "Ks")};
+  const GLint diffuseTexLoc{
+      abcg::glGetUniformLocation(m_program, "diffuseTex")};
+  const GLint mappingModeLoc{
+      abcg::glGetUniformLocation(m_program, "mappingMode")};
 
   // Set uniform variables used by every scene object
   abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE,
                            &m_camera.m_viewMatrix[0][0]);
   abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE,
                            &m_camera.m_projMatrix[0][0]);
+  abcg::glUniform1i(diffuseTexLoc, 0);
+  // abcg::glUniform1i(mappingModeLoc, m_mappingMode);
+  abcg::glUniform1i(mappingModeLoc, 3);
 
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &modelMatrix[0][0]);
 
@@ -219,16 +221,25 @@ void OpenGLWindow::render(GLuint m_program, glm::mat4 modelMatrix,
   const glm::mat3 normalMatrix{glm::inverseTranspose(modelViewMatrix)};
   abcg::glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, &normalMatrix[0][0]);
   // abcg::glUniform4f(colorLoc, color);
-  abcg::glUniform4fv(colorLoc, 1, &color.r);
+  // abcg::glUniform4fv(colorLoc, 1, &color.r);
 
   abcg::glUniform4fv(lightDirLoc, 1, &m_lightDir.x);
-  abcg::glUniform1f(shininessLoc, m_shininess);
+
   abcg::glUniform4fv(IaLoc, 1, &m_Ia.x);
   abcg::glUniform4fv(IdLoc, 1, &m_Id.x);
   abcg::glUniform4fv(IsLoc, 1, &m_Is.x);
+
+  m_Ka = obj.getKa();
+  m_Kd = obj.getKd();
+  m_Ks = obj.getKs();
+  m_shininess = obj.getShininess();
+
+  abcg::glUniform1f(shininessLoc, m_shininess);
   abcg::glUniform4fv(KaLoc, 1, &m_Ka.x);
   abcg::glUniform4fv(KdLoc, 1, &m_Kd.x);
   abcg::glUniform4fv(KsLoc, 1, &m_Ks.x);
+  obj.render();
+  glUseProgram(0);
 }
 
 glm::vec2 OpenGLWindow::getMouseRotationSpeed() {

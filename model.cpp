@@ -4,17 +4,18 @@
 #include <tiny_obj_loader.h>
 
 #include <cppitertools/itertools.hpp>
+#include <filesystem>
 #include <glm/gtx/hash.hpp>
 #include <unordered_map>
 
-// Explicit specialization of std::hash for Vertex
 namespace std {
 template <>
 struct hash<Vertex> {
   size_t operator()(Vertex const& vertex) const noexcept {
     const std::size_t h1{std::hash<glm::vec3>()(vertex.position)};
     const std::size_t h2{std::hash<glm::vec3>()(vertex.normal)};
-    return h1 ^ h2;
+    const std::size_t h3{std::hash<glm::vec2>()(vertex.texCoord)};
+    return h1 ^ h2 ^ h3;
   }
 };
 }  // namespace std
@@ -41,9 +42,14 @@ void Model::createBuffers() {
 }
 
 void Model::loadObj(std::string_view path, bool standardize) {
+  const auto basePath{std::filesystem::path{path}.parent_path().string() + "/"};
+
+  tinyobj::ObjReaderConfig readerConfig;
+  readerConfig.mtl_search_path = basePath;  // Path to material files
+
   tinyobj::ObjReader reader;
 
-  if (!reader.ParseFromFile(path.data())) {
+  if (!reader.ParseFromFile(path.data(), readerConfig)) {
     if (!reader.Error().empty()) {
       throw abcg::Exception{abcg::Exception::Runtime(
           fmt::format("Failed to load model {} ({})", path, reader.Error()))};
@@ -58,11 +64,13 @@ void Model::loadObj(std::string_view path, bool standardize) {
 
   const auto& attrib{reader.GetAttrib()};
   const auto& shapes{reader.GetShapes()};
+  const auto& materials{reader.GetMaterials()};
 
   m_vertices.clear();
   m_indices.clear();
 
   m_hasNormals = false;
+  m_hasTexCoords = false;
 
   // A key:value map with key=Vertex and value=index
   std::unordered_map<Vertex, GLuint> hash{};
@@ -92,9 +100,20 @@ void Model::loadObj(std::string_view path, bool standardize) {
         nz = attrib.normals.at(normalStartIndex + 2);
       }
 
+      // Vertex texture coordinates
+      float tu{};
+      float tv{};
+      if (index.texcoord_index >= 0) {
+        m_hasTexCoords = true;
+        const int texCoordsStartIndex{2 * index.texcoord_index};
+        tu = attrib.texcoords.at(texCoordsStartIndex + 0);
+        tv = attrib.texcoords.at(texCoordsStartIndex + 1);
+      }
+
       Vertex vertex{};
       vertex.position = {vx, vy, vz};
       vertex.normal = {nx, ny, nz};
+      vertex.texCoord = {tu, tv};
 
       // If hash doesn't contain this vertex
       if (hash.count(vertex) == 0) {
@@ -108,6 +127,24 @@ void Model::loadObj(std::string_view path, bool standardize) {
     }
   }
 
+  // Use properties of first material, if available
+  if (!materials.empty()) {
+    const auto& mat{materials.at(0)};  // First material
+    m_Ka = glm::vec4(mat.ambient[0], mat.ambient[1], mat.ambient[2], 1);
+    m_Kd = glm::vec4(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1);
+    m_Ks = glm::vec4(mat.specular[0], mat.specular[1], mat.specular[2], 1);
+    m_shininess = mat.shininess;
+
+    if (!mat.diffuse_texname.empty())
+      loadDiffuseTexture(basePath + mat.diffuse_texname);
+  } else {
+    // Default values
+    m_Ka = {0.1f, 0.1f, 0.1f, 1.0f};
+    m_Kd = {0.7f, 0.7f, 0.7f, 1.0f};
+    m_Ks = {1.0f, 1.0f, 1.0f, 1.0f};
+    m_shininess = 25.0f;
+  }
+
   if (standardize) {
     this->standardize();
   }
@@ -119,10 +156,38 @@ void Model::loadObj(std::string_view path, bool standardize) {
   createBuffers();
 }
 
+void Model::loadModel(std::string_view objPath, std::string_view texturePath,
+                      GLuint program) {
+  terminateGL();
+  loadDiffuseTexture(texturePath);
+  loadObj(objPath);
+  setupVAO(program);
+}
+
+void Model::loadDiffuseTexture(std::string_view path) {
+  if (!std::filesystem::exists(path)) return;
+
+  abcg::glDeleteTextures(1, &m_diffuseTexture);
+  m_diffuseTexture = abcg::opengl::loadTexture(path);
+}
+
 void Model::render() const {
   abcg::glBindVertexArray(m_VAO);
 
-  abcg::glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_indices.size()),
+  abcg::glActiveTexture(GL_TEXTURE0);
+  abcg::glBindTexture(GL_TEXTURE_2D, m_diffuseTexture);
+
+  // Set minification and magnification parameters
+  abcg::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  abcg::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // Set texture wrapping parameters
+  abcg::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  abcg::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+  // abcg::glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_indices.size()),
+  //                      GL_UNSIGNED_INT, nullptr);
+  abcg::glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3000),
                        GL_UNSIGNED_INT, nullptr);
 
   abcg::glBindVertexArray(0);
@@ -158,6 +223,16 @@ void Model::setupVAO(GLuint program) {
                                 reinterpret_cast<void*>(offset));
   }
 
+  const GLint texCoordAttribute{
+      abcg::glGetAttribLocation(program, "inTexCoord")};
+  if (texCoordAttribute >= 0) {
+    abcg::glEnableVertexAttribArray(texCoordAttribute);
+    GLsizei offset{sizeof(glm::vec3) + sizeof(glm::vec3)};
+    abcg::glVertexAttribPointer(texCoordAttribute, 2, GL_FLOAT, GL_FALSE,
+                                sizeof(Vertex),
+                                reinterpret_cast<void*>(offset));
+  }
+
   // End of binding
   abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
   abcg::glBindVertexArray(0);
@@ -187,6 +262,7 @@ void Model::standardize() {
 }
 
 void Model::terminateGL() {
+  abcg::glDeleteTextures(1, &m_diffuseTexture);
   abcg::glDeleteBuffers(1, &m_EBO);
   abcg::glDeleteBuffers(1, &m_VBO);
   abcg::glDeleteVertexArrays(1, &m_VAO);

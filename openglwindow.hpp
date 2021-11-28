@@ -30,20 +30,27 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   glm::vec2 m_mouseMovement{0.0f};
   bool m_relativeMouse{true};
   abcg::ElapsedTimer m_mouseTimer{};
+
+  // Mapping mode
+  // 0: triplanar; 1: cylindrical; 2: spherical; 3: from mesh
+  int m_mappingMode{};
+
   // Light and material properties
   glm::vec4 m_lightDir{-1.0f, -1.0f, -1.0f, 0.0f};
-  glm::vec4 m_Ia{1.0f, 1.0f, 1.0f, 1.0f};
-  glm::vec4 m_Id{1.0f, 1.0f, 1.0f, 1.0f};
-  glm::vec4 m_Is{1.0f, 1.0f, 1.0f, 1.0f};
-  glm::vec4 m_Ka{0.1f, 0.1f, 0.1f, 1.0f};
-  glm::vec4 m_Kd{0.7f, 0.7f, 0.7f, 1.0f};
-  glm::vec4 m_Ks{1.0f, 1.0f, 1.0f, 1.0f};
-  float m_shininess{25.0f};
+  glm::vec4 m_Ia{1.0f};
+  glm::vec4 m_Id{1.0f};
+  glm::vec4 m_Is{1.0f};
+  glm::vec4 m_Ka;
+  glm::vec4 m_Kd;
+  glm::vec4 m_Ks;
+  float m_shininess{};
 
+  void loadModel(std::string_view path);
   void renderGun();
   void renderRoom();
   void renderTarget();
-  void render(GLuint m_program, glm::mat4 modelMatrix, glm::vec4 color);
+  void render(GLuint m_program, glm::mat4 modelMatrix, glm::vec4 color,
+              Model obj);
 
   void update();
   glm::vec2 getMouseRotationSpeed();
