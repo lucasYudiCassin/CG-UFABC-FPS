@@ -7,9 +7,12 @@
 
 struct Vertex {
   glm::vec3 position{};
+  glm::vec3 normal{};
 
   bool operator==(const Vertex& other) const noexcept {
-    return position == other.position;
+    static const auto epsilon{std::numeric_limits<float>::epsilon()};
+    return glm::all(glm::epsilonEqual(position, other.position, epsilon)) &&
+           glm::all(glm::epsilonEqual(normal, other.normal, epsilon));
   }
 };
 
@@ -23,8 +26,10 @@ class Model {
   // [[nodiscard]] int getNumTriangles() const {
   //   return static_cast<int>(m_indices.size()) / 3;
   // }
+  bool m_hasNormals{false};
+  void computeNormals();
 
- private:
+  private:
   GLuint m_VAO{};
   GLuint m_VBO{};
   GLuint m_EBO{};

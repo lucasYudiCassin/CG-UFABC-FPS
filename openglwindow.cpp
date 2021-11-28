@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include <cppitertools/itertools.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 
 void OpenGLWindow::handleEvent(SDL_Event& event) {
   glm::ivec2 mousePosition;
@@ -66,14 +67,23 @@ void OpenGLWindow::initializeGL() {
   abcg::glEnable(GL_DEPTH_TEST);
 
   // Create program
-  m_program = createProgramFromFile(getAssetsPath() + "depth.vert",
-                                    getAssetsPath() + "depth.frag");
+  m_program = createProgramFromFile(getAssetsPath() + "blinnphong.vert",
+                                    getAssetsPath() + "blinnphong.frag");
+
+  // // Create programs
+  // for (const auto& name : m_shaderNames) {
+  //   const auto program{createProgramFromFile(getAssetsPath() + name +
+  //   ".vert",
+  //                                            getAssetsPath() + name +
+  //                                            ".frag")};
+  //   m_programs.push_back(program);
+  // }
 
   // Load model
   m_gunModel.loadObj(getAssetsPath() + "GUN_OBJ.obj", true);
   m_gunModel.setupVAO(m_program);
 
-  m_roomModel.loadObj(getAssetsPath() + "ROOM_V3.obj", true);
+  m_roomModel.loadObj(getAssetsPath() + "ROOM_V4.obj", true);
   m_roomModel.setupVAO(m_program);
 
   m_targetModel.loadObj(getAssetsPath() + "target.obj", true);
@@ -125,23 +135,6 @@ void OpenGLWindow::update() {
 }
 
 void OpenGLWindow::renderGun() {
-  glUseProgram(m_program);
-
-  // Get location of uniform variables (could be precomputed)
-  const GLint viewMatrixLoc{
-      abcg::glGetUniformLocation(m_program, "viewMatrix")};
-  const GLint projMatrixLoc{
-      abcg::glGetUniformLocation(m_program, "projMatrix")};
-  const GLint modelMatrixLoc{
-      abcg::glGetUniformLocation(m_program, "modelMatrix")};
-  const GLint colorLoc{abcg::glGetUniformLocation(m_program, "color")};
-
-  // Set uniform variables used by every scene object
-  abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE,
-                           &m_camera.m_viewMatrix[0][0]);
-  abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE,
-                           &m_camera.m_projMatrix[0][0]);
-
   glm::mat4 modelMatrix{1.0f};
 
   // m_axis = {0.0f, 1.0f, 0.0f};
@@ -152,10 +145,6 @@ void OpenGLWindow::renderGun() {
   modelMatrix = glm::translate(
       modelMatrix, 0.5f * glm::normalize(m_camera.m_at - m_camera.m_eye));
 
-  // translate gun horizontally
-
-  // translate gun vertically
-
   modelMatrix = glm::scale(modelMatrix, glm::vec3(0.15f, 0.15f, 0.15f));
   modelMatrix = glm::rotate(modelMatrix, 90.0f, m_camera.m_up);
   // modelMatrix =
@@ -163,51 +152,38 @@ void OpenGLWindow::renderGun() {
 
   // m_gunModel.m_modelMatrix = translateMatrix * rotateMatrix * scalingMatrix;
 
-  abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &modelMatrix[0][0]);
-  abcg::glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);  // White
+  render(m_program, modelMatrix, {1.0f, 1.0f, 1.0f, 1.0f});
   m_gunModel.render();
   glUseProgram(0);
 }
 
 void OpenGLWindow::renderRoom() {
-  glUseProgram(m_program);
-
-  // Get location of uniform variables (could be precomputed)
-  const GLint modelMatrixLoc{
-      abcg::glGetUniformLocation(m_program, "modelMatrix")};
-  const GLint viewMatrixLoc{
-      abcg::glGetUniformLocation(m_program, "viewMatrix")};
-  const GLint projMatrixLoc{
-      abcg::glGetUniformLocation(m_program, "projMatrix")};
-
-  const GLint colorLoc{abcg::glGetUniformLocation(m_program, "color")};
-
-  // Set uniform variables used by every scene object
-  abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE,
-                           &m_camera.m_viewMatrix[0][0]);
-  abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE,
-                           &m_camera.m_projMatrix[0][0]);
-
   glm::mat4 modelMatrix{1.0f};
-
   // Rotation angle
   const auto angle = glm::radians(90.0f);
   modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 1.0f));
   modelMatrix = glm::scale(modelMatrix, glm::vec3(3.0f, 2.0f, 2.0f));
   modelMatrix = glm::rotate(modelMatrix, -angle, m_camera.m_up);
 
-  // glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), angle, m_axis);
-
-  abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &modelMatrix[0][0]);
-  abcg::glUniform4f(colorLoc, 0.8f, 0.8f, 0.8f, 1.0f);
-
+  render(m_program, modelMatrix, {0.8f, 0.8f, 0.8f, 1.0f});
   m_roomModel.render();
   glUseProgram(0);
 }
 
 void OpenGLWindow::renderTarget() {
-  glUseProgram(m_program);
+  glm::mat4 modelMatrix{1.0f};
+  // Rotation angle
+  modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+  modelMatrix = glm::scale(modelMatrix, glm::vec3(0.13f, 0.13f, 0.13f));
 
+  render(m_program, modelMatrix, {0.0f, 0.0f, 0.7f, 1.0f});
+  m_targetModel.render();
+  glUseProgram(0);
+}
+
+void OpenGLWindow::render(GLuint m_program, glm::mat4 modelMatrix,
+                          glm::vec4 color) {
+  glUseProgram(m_program);
   // Get location of uniform variables (could be precomputed)
   const GLint viewMatrixLoc{
       abcg::glGetUniformLocation(m_program, "viewMatrix")};
@@ -215,7 +191,21 @@ void OpenGLWindow::renderTarget() {
       abcg::glGetUniformLocation(m_program, "projMatrix")};
   const GLint modelMatrixLoc{
       abcg::glGetUniformLocation(m_program, "modelMatrix")};
+
+  const GLint normalMatrixLoc{
+      abcg::glGetUniformLocation(m_program, "normalMatrix")};
+
   const GLint colorLoc{abcg::glGetUniformLocation(m_program, "color")};
+
+  const GLint lightDirLoc{
+      abcg::glGetUniformLocation(m_program, "lightDirWorldSpace")};
+  const GLint shininessLoc{abcg::glGetUniformLocation(m_program, "shininess")};
+  const GLint IaLoc{abcg::glGetUniformLocation(m_program, "Ia")};
+  const GLint IdLoc{abcg::glGetUniformLocation(m_program, "Id")};
+  const GLint IsLoc{abcg::glGetUniformLocation(m_program, "Is")};
+  const GLint KaLoc{abcg::glGetUniformLocation(m_program, "Ka")};
+  const GLint KdLoc{abcg::glGetUniformLocation(m_program, "Kd")};
+  const GLint KsLoc{abcg::glGetUniformLocation(m_program, "Ks")};
 
   // Set uniform variables used by every scene object
   abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE,
@@ -223,16 +213,22 @@ void OpenGLWindow::renderTarget() {
   abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE,
                            &m_camera.m_projMatrix[0][0]);
 
-  glm::mat4 modelMatrix{1.0f};
-  // Rotation angle
-  modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-  modelMatrix = glm::scale(modelMatrix, glm::vec3(0.13f, 0.13f, 0.13f));
-
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &modelMatrix[0][0]);
-  abcg::glUniform4f(colorLoc, 0.0f, 0.0f, 0.7f, 1.0f);
 
-  m_targetModel.render();
-  glUseProgram(0);
+  const auto modelViewMatrix{glm::mat3(m_camera.m_viewMatrix * modelMatrix)};
+  const glm::mat3 normalMatrix{glm::inverseTranspose(modelViewMatrix)};
+  abcg::glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, &normalMatrix[0][0]);
+  // abcg::glUniform4f(colorLoc, color);
+  abcg::glUniform4fv(colorLoc, 1, &color.r);
+
+  abcg::glUniform4fv(lightDirLoc, 1, &m_lightDir.x);
+  abcg::glUniform1f(shininessLoc, m_shininess);
+  abcg::glUniform4fv(IaLoc, 1, &m_Ia.x);
+  abcg::glUniform4fv(IdLoc, 1, &m_Id.x);
+  abcg::glUniform4fv(IsLoc, 1, &m_Is.x);
+  abcg::glUniform4fv(KaLoc, 1, &m_Ka.x);
+  abcg::glUniform4fv(KdLoc, 1, &m_Kd.x);
+  abcg::glUniform4fv(KsLoc, 1, &m_Ks.x);
 }
 
 glm::vec2 OpenGLWindow::getMouseRotationSpeed() {

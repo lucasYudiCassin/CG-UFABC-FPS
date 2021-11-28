@@ -30,13 +30,27 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   glm::vec2 m_mouseMovement{0.0f};
   bool m_relativeMouse{true};
   abcg::ElapsedTimer m_mouseTimer{};
+  // Light and material properties
+  glm::vec4 m_lightDir{-1.0f, -1.0f, -1.0f, 0.0f};
+  glm::vec4 m_Ia{1.0f, 1.0f, 1.0f, 1.0f};
+  glm::vec4 m_Id{1.0f, 1.0f, 1.0f, 1.0f};
+  glm::vec4 m_Is{1.0f, 1.0f, 1.0f, 1.0f};
+  glm::vec4 m_Ka{0.1f, 0.1f, 0.1f, 1.0f};
+  glm::vec4 m_Kd{0.7f, 0.7f, 0.7f, 1.0f};
+  glm::vec4 m_Ks{1.0f, 1.0f, 1.0f, 1.0f};
+  float m_shininess{25.0f};
 
   void renderGun();
   void renderRoom();
   void renderTarget();
+  void render(GLuint m_program, glm::mat4 modelMatrix, glm::vec4 color);
 
   void update();
   glm::vec2 getMouseRotationSpeed();
+
+  // std::vector<const char*> m_shaderNames{"normal", "depth"};
+  // std::vector<GLuint> m_programs;
+  // int m_currentProgramIndex{-1};
 };
 
 #endif
